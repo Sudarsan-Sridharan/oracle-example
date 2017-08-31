@@ -11,9 +11,9 @@ import java.math.BigInteger;
 @InitiatingFlow
 class QueryPrime extends FlowLogic<BigInteger> {
     private final Party oracle;
-    private final Long n;
+    private final int n;
 
-    public QueryPrime(Party oracle, Long n) {
+    public QueryPrime(Party oracle, int n) {
         this.oracle = oracle;
         this.n = n;
     }

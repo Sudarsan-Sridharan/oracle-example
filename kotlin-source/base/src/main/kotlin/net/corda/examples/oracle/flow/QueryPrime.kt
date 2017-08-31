@@ -9,7 +9,6 @@ import java.math.BigInteger
 
 // Simple flow which takes a reference to an Oracle and a number then returns the corresponding nth prime number.
 @InitiatingFlow
-class QueryPrime(val oracle: Party, val n: Long) : FlowLogic<BigInteger>() {
+class QueryPrime(val oracle: Party, val n: Int) : FlowLogic<BigInteger>() {
     @Suspendable override fun call() = sendAndReceive<BigInteger>(oracle, n).unwrap { it }
 }
-

@@ -16,18 +16,15 @@ import net.corda.examples.oracle.contract.Prime;
 import net.corda.examples.oracle.service.PrimeType;
 
 import java.math.BigInteger;
-import java.security.PublicKey;
-import java.util.List;
-import java.util.function.Predicate;
 
 // This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
 // and the Oracle's signature over the transaction containing it.
 @InitiatingFlow     // This flow can be started by the node.
 @StartableByRPC // Annotation to allow this flow to be started via RPC.
 public class CreatePrime extends FlowLogic<SignedTransaction> {
-    private final Long index;
+    private final int index;
 
-    public CreatePrime(Long index) {
+    public CreatePrime(int index) {
         this.index = index;
     }
 
@@ -64,13 +61,13 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Get references to all required parties.
         progressTracker.setCurrentStep(INITIALISING);
         Party notary = getServiceHub().getNetworkMapCache().getNotaryNodes().get(0).getNotaryIdentity();
+        // The calling node's identity.
+        Party me = getServiceHub().getMyInfo().getLegalIdentity();
         // We get the oracle reference by using the ServiceType definition defined in the base CorDapp.
         NodeInfo oracle = getServiceHub().getNetworkMapCache().getNodesWithService(PrimeType.getType()).get(0);
         // **IMPORTANT:** Corda node services use their own key pairs, therefore we need to obtain the Party object for
         // the Oracle service as opposed to the node RUNNING the Oracle service.
         Party oracleService = oracle.serviceIdentities(PrimeType.getType()).get(0);
-        // The calling node's identity.
-        Party me = getServiceHub().getMyInfo().getLegalIdentity();
 
         // Query the Oracle to get specified nth prime number.
         progressTracker.setCurrentStep(QUERYING);
@@ -102,14 +99,7 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Build a filtered transaction for the Oracle to sign over.
         // We only want to expose 'Prime.Create' commands if the specified Oracle is a signer.
         FilteredTransaction ftx = ptx.getTx().buildFilteredTransaction(
-                elem -> {
-                    if (elem instanceof Command) {
-                        Command cmd = (Command) elem;
-                        return cmd.getSigners().contains(oracleService.getOwningKey())
-                                && cmd.getValue() instanceof Prime.Create;
-                    }
-                    return false;
-                }
+                this::filterOracleCmds
         );
         // Get a signature from the Oracle over the Merkle root of the transaction.
         TransactionSignature oracleSignature = subFlow(new SignPrime(oracle.getLegalIdentity(), ftx));
@@ -120,5 +110,21 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
         progressTracker.setCurrentStep(FINALISING);
         return subFlow(new FinalityFlow(stx)).get(0);
+    }
+
+    /**
+     * Returns true if the transaction object is a command relevant to the primes oracle.
+     *
+     * @param elem the transaction object to check.
+     */
+    private boolean filterOracleCmds(Object elem) {
+        if (elem instanceof Command) {
+            Command cmd = (Command) elem;
+            NodeInfo oracle = getServiceHub().getNetworkMapCache().getNodesWithService(PrimeType.getType()).get(0);
+            Party oracleService = oracle.serviceIdentities(PrimeType.getType()).get(0);
+            return cmd.getSigners().contains(oracleService.getOwningKey())
+                    && cmd.getValue() instanceof Prime.Create;
+        }
+        return false;
     }
 }

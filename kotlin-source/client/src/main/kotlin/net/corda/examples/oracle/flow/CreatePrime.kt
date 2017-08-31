@@ -18,7 +18,7 @@ import java.util.function.Predicate
 // and the Oracle's signature over the transaction containing it.
 @InitiatingFlow     // This flow can be started by the node.
 @StartableByRPC // Annotation to allow this flow to be started via RPC.
-class CreatePrime(val index: Long) : FlowLogic<SignedTransaction>() {
+class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
     // Progress tracker boilerplate.
     companion object {
         object INITIALISING : ProgressTracker.Step("Initialising flow.")

@@ -1,10 +1,14 @@
-import net.corda.core.crypto.getX509Name
-import net.corda.core.internal.concurrent.transpose
-import net.corda.core.node.services.ServiceInfo
-import net.corda.core.utilities.getOrThrow
-import net.corda.node.services.transactions.ValidatingNotaryService
-import net.corda.nodeapi.User
-import net.corda.testing.driver.driver
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import net.corda.core.node.services.ServiceInfo;
+import net.corda.node.services.config.VerifierType;
+import net.corda.node.services.transactions.ValidatingNotaryService;
+import net.corda.nodeapi.User;
+import net.corda.testing.driver.NodeHandle;
+
+import static java.util.Collections.*;
+import static net.corda.core.crypto.X500NameUtils.getX509Name;
+import static net.corda.testing.driver.Driver.driver;
 
 /**
  * This file is exclusively for being able to run your nodes through an IDE (as opposed to running deployNodes)
@@ -19,22 +23,36 @@ import net.corda.testing.driver.driver
  * 4. Set your breakpoints in your CorDapp code.
  * 5. Run the "Debug CorDapp" remote debug run configuration.
  */
-fun main(args: Array<String>) {
-    // No permissions required as we are not invoking flows.
-    val user = User("user1", "test", permissions = setOf())
-    driver(isDebug = true) {
-        startNode(getX509Name("Controller", "London", "root@city.uk.example"), setOf(ServiceInfo(ValidatingNotaryService.type)))
-        val (nodeA, nodeB, nodeC) = listOf(
-                startNode(getX509Name("NodeA", "Paris", "root@city.fr.example"), rpcUsers = listOf(user)),
-                startNode(getX509Name("NodeB", "Rome", "root@city.it.example"), rpcUsers = listOf(user)),
-                startNode(getX509Name("NodeC", "New York", "root@city.us.example"), rpcUsers = listOf(user))).transpose().getOrThrow()
+public class Main {
+    public static void main(String[] args) {
+        // No permissions required as we are not invoking flows.
+        final User user = new User("user1", "test", emptySet());
+        driver(
+                true,
+                dsl -> {
+                    dsl.startNode(getX509Name("Controller", "London", "root@city.uk.example"),
+                            ImmutableSet.of(new ServiceInfo(ValidatingNotaryService.Companion.getType(), null)),
+                            emptyList(),
+                            VerifierType.InMemory,
+                            emptyMap(),
+                            null);
 
-        startWebserver(nodeA)
-        startWebserver(nodeB)
-        startWebserver(nodeC)
+                    try {
+                        NodeHandle nodeA = dsl.startNode(getX509Name("NodeA", "Paris", "root@city.fr.example"), emptySet(), ImmutableList.of(user), VerifierType.InMemory, emptyMap(), null).get();
+                        NodeHandle nodeB = dsl.startNode(getX509Name("NodeB", "Rome", "root@city.it.example"), emptySet(), ImmutableList.of(user), VerifierType.InMemory, emptyMap(), null).get();
+                        NodeHandle nodeC = dsl.startNode(getX509Name("NodeC", "New York", "root@city.us.example"), emptySet(), ImmutableList.of(user), VerifierType.InMemory, emptyMap(), null).get();
 
-        waitForAllNodesToFinish()
+                        dsl.startWebserver(nodeA);
+                        dsl.startWebserver(nodeB);
+                        dsl.startWebserver(nodeC);
+
+                        dsl.waitForAllNodesToFinish();
+                    } catch (Throwable e) {
+                        System.err.println("Encountered exception in node startup: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
+        );
     }
 }
-
-

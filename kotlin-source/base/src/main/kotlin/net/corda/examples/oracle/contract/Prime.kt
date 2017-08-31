@@ -13,7 +13,7 @@ class Prime : Contract {
     // State object with custom properties defined in the constructor.
     // If 'index' is a natural number N then 'value' is the Nth Prime.
     // Requester represents the Party that will store this fact (in the node vault).
-    data class State(val index: Long,
+    data class State(val index: Int,
                      val value: BigInteger,
                      val requester: AbstractParty) : ContractState {
         override val contract: Contract get() = Prime()
@@ -23,7 +23,7 @@ class Prime : Contract {
 
     // Command with data items.
     // Commands that are to be used in conjunction with an Oracle contain properties
-    class Create(val index: Long, val value: BigInteger) : CommandData
+    class Create(val index: Int, val value: BigInteger) : CommandData
 
     // Contract code.
     // Here, we are only checking that the properties in the state match those in the command.

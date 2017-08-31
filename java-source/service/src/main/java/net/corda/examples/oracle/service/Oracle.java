@@ -52,13 +52,15 @@ public class Oracle extends SingletonSerializeAsToken {
     // Clearly, most developers can generate a list of primes and all but the largest prime numbers can be verified
     // deterministically in reasonable time. As such, it would be possible to add a constraint in the verify()
     // function that checks the nth prime is indeed the specified number.
-    public BigInteger query(Long n) {
+    public BigInteger query(int n) {
         if (n <= 1) {
             throw new IllegalArgumentException("N must be greater than one.");
         }
 
-        BigInteger nthPrime = BigInteger.ZERO;
-        for (long primesCounter = 0; primesCounter < n; nthPrime = nthPrime.add(BigInteger.ONE)) {
+        BigInteger nthPrime = BigInteger.ONE;
+        for (int primesCounter = 0; primesCounter < n;) {
+            nthPrime = nthPrime.add(BigInteger.ONE);
+
             if (nthPrime.isProbablePrime(16)) {
                 primesCounter += 1;
             }
@@ -112,7 +114,7 @@ public class Oracle extends SingletonSerializeAsToken {
     // We only expect to see commands.
     boolean check(Object elem) {
         if (elem instanceof Command) {
-            commandValidator((Command) elem);
+            return commandValidator((Command) elem);
         }
         throw new IllegalArgumentException("Oracle received data of different type than expected.");
     }

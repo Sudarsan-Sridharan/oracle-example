@@ -31,12 +31,12 @@ public class Prime implements Contract {
     // If 'index' is a natural number N then 'value' is the Nth Prime.
     // Requester represents the Party that will store this fact (in the node vault).
     public static class State implements ContractState {
-        private final Long index;
+        private final int index;
         private final BigInteger value;
         private final AbstractParty requester;
         private final Prime contract = new Prime();
 
-        public State(Long index, BigInteger value, AbstractParty requester) {
+        public State(int index, BigInteger value, AbstractParty requester) {
             this.index = index;
             this.value = value;
             this.requester = requester;
@@ -61,15 +61,15 @@ public class Prime implements Contract {
     // Command with data items.
     // Commands that are to be used in conjunction with an Oracle contain properties
     public static class Create implements CommandData {
-        private long index;
+        private int index;
         private BigInteger value;
 
-        public Create(long index, BigInteger value) {
+        public Create(int index, BigInteger value) {
             this.index = index;
             this.value = value;
         }
 
-        public long getIndex() { return index; }
+        public int getIndex() { return index; }
         public BigInteger getValue() { return value; }
     }
 }

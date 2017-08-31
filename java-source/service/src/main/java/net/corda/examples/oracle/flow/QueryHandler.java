@@ -34,7 +34,7 @@ public class QueryHandler extends FlowLogic<Void> {
     @Override
     public Void call() throws FlowException {
         // Receive the request.
-        Long request = receive(Long.class, otherParty).unwrap(it -> it);
+        int request = receive(Integer.class, otherParty).unwrap(it -> it);
         progressTracker.setCurrentStep(SENDING);
         try {
             // Get the nth prime from the Oracle.

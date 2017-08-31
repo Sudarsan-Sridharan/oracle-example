@@ -26,7 +26,7 @@ class QueryHandler(val otherParty: Party) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         // Receive the request.
-        val request = receive<Long>(otherParty).unwrap { it }
+        val request = receive<Int>(otherParty).unwrap { it }
         progressTracker.currentStep = SENDING
         try {
             // Get the nth prime from the Oracle.

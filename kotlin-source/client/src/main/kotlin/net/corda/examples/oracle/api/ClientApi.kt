@@ -55,7 +55,7 @@ class ClientApi(val services: CordaRPCOps) {
     @GET
     @Path("create-prime")
     @Produces(MediaType.APPLICATION_JSON)
-    fun createPrime(@QueryParam(value = "n") n: Long): Response {
+    fun createPrime(@QueryParam(value = "n") n: Int): Response {
         // Start the CretePrime flow. We block and wait for the flow to return.
         val (status, message) = try {
             val flowHandle = services.startFlowDynamic(CreatePrime::class.java, n)

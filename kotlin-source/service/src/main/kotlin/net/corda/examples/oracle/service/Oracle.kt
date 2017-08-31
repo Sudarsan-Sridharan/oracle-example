@@ -45,9 +45,9 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
         get() = generateSequence(BigInteger.ONE) { it + BigInteger.ONE }.filter { it.isProbablePrime(16) }
 
     // Returns the nth prime for a given n > 0.
-    fun query(n: Long): BigInteger {
+    fun query(n: Int): BigInteger {
         require(n > 1) { "N must be greater than one." }
-        return primes.take(n.toInt()).last()
+        return primes.take(n).last()
     }
 
     // Signs over a transaction if the specified nth prime for a particular n is correct.

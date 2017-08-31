@@ -73,7 +73,7 @@ public class ClientApi {
     @GET
     @Path("create-prime")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createPrime(@QueryParam(value = "n") Long n) {
+    public Response createPrime(@QueryParam(value = "n") int n) {
         Response.Status status;
         String msg;
         try {
