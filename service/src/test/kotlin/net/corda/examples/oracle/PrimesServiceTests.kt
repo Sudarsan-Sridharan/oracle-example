@@ -1,40 +1,41 @@
 package net.corda.examples.oracle
 
 import net.corda.core.contracts.Command
-import net.corda.core.contracts.TransactionType
 import net.corda.core.transactions.FilteredTransaction
+import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
-import net.corda.core.utilities.ALICE
-import net.corda.core.utilities.CHARLIE
-import net.corda.core.utilities.CHARLIE_KEY
-import net.corda.core.utilities.DUMMY_NOTARY
 import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.service.Oracle
+import net.corda.node.utilities.CordaPersistence
 import net.corda.node.utilities.configureDatabase
-import net.corda.node.utilities.transaction
+import net.corda.testing.ALICE
+import net.corda.testing.CHARLIE
+import net.corda.testing.CHARLIE_KEY
+import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.makeTestDataSourceProperties
-import org.jetbrains.exposed.sql.Database
+import net.corda.testing.node.makeTestDatabaseProperties
+import net.corda.testing.node.makeTestIdentityService
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.io.Closeable
 import java.math.BigInteger
+import java.util.function.Predicate
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class PrimesServiceTests {
     val dummyServices = MockServices(CHARLIE_KEY)
     lateinit var oracle: Oracle
-    lateinit var dataSource: Closeable
-    lateinit var database: Database
+    lateinit var database: CordaPersistence
 
     @Before
     fun setUp() {
         // Mock components for testing the Oracle.
-        val dataSourceAndDatabase = configureDatabase(makeTestDataSourceProperties())
-        dataSource = dataSourceAndDatabase.first
-        database = dataSourceAndDatabase.second
+        database = configureDatabase(
+                makeTestDataSourceProperties(),
+                makeTestDatabaseProperties(),
+                createIdentityService = { makeTestIdentityService() })
         database.transaction {
             oracle = Oracle(CHARLIE, dummyServices)
         }
@@ -42,7 +43,7 @@ class PrimesServiceTests {
 
     @After
     fun tearDown() {
-        dataSource.close()
+        database.close()
     }
 
     @Test
@@ -66,17 +67,14 @@ class PrimesServiceTests {
         database.transaction {
             val command = Command(Prime.Create(10, BigInteger.valueOf(29)), listOf(CHARLIE.owningKey))
             val state = Prime.State(10, BigInteger.valueOf(29), ALICE)
-            val wtx: WireTransaction = TransactionType.General.Builder(DUMMY_NOTARY)
+            val wtx: WireTransaction = TransactionBuilder(DUMMY_NOTARY)
                     .withItems(state, command)
                     .toWireTransaction()
-            val ftx: FilteredTransaction = wtx.buildFilteredTransaction {
-                when (it) {
-                    is Command -> oracle.identity.owningKey in it.signers && it.value is Prime.Create
-                    else -> false
-                }
-            }
+            val ftx: FilteredTransaction = wtx.buildFilteredTransaction(Predicate {
+                (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
+            })
             val signature = oracle.sign(ftx)
-            assert(signature.verify(ftx.rootHash.bytes))
+            assert(signature.verify(ftx.rootHash))
         }
     }
 
@@ -85,13 +83,10 @@ class PrimesServiceTests {
         database.transaction {
             val command = Command(Prime.Create(10, BigInteger.valueOf(1000)), listOf(CHARLIE.owningKey))
             val state = Prime.State(10, BigInteger.valueOf(29), ALICE)
-            val wtx: WireTransaction = TransactionType.General.Builder(DUMMY_NOTARY).withItems(state, command).toWireTransaction()
-            val ftx: FilteredTransaction = wtx.buildFilteredTransaction {
-                when (it) {
-                    is Command -> oracle.identity.owningKey in it.signers && it.value is Prime.Create
-                    else -> false
-                }
-            }
+            val wtx: WireTransaction = TransactionBuilder(DUMMY_NOTARY).withItems(state, command).toWireTransaction()
+            val ftx: FilteredTransaction = wtx.buildFilteredTransaction(Predicate {
+                (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
+            })
             assertFailsWith<IllegalArgumentException> { oracle.sign(ftx) }
         }
     }

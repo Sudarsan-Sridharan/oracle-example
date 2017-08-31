@@ -1,8 +1,7 @@
 package net.corda.examples.oracle.service
 
 import net.corda.core.contracts.Command
-import net.corda.core.crypto.DigitalSignature
-import net.corda.core.crypto.MerkleTreeException
+import net.corda.core.crypto.*
 import net.corda.core.identity.Party
 import net.corda.core.node.PluginServiceHub
 import net.corda.core.node.ServiceHub
@@ -56,12 +55,12 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
     // the Oracle doesn't need to see to opine over the correctness of the nth prime have been removed. In this case
     // all but the Prime.Create commands have been removed. If the nth prime is correct then the Oracle signs over
     // the Merkle root (the hash) of the transaction.
-    fun sign(ftx: FilteredTransaction): DigitalSignature.LegallyIdentifiable {
+    fun sign(ftx: FilteredTransaction): TransactionSignature {
         // Check the partial Merkle tree is valid.
         if (!ftx.verify()) throw MerkleTreeException("Couldn't verify partial Merkle tree.")
 
         // Check that the correct primes are present for the index values specified.
-        fun commandValidator(elem: Command): Boolean {
+        fun commandValidator(elem: Command<*>): Boolean {
             // This Oracle only cares about commands which have its public key in the signers list.
             // This Oracle also only cares about Prime.Create commands.
             // Of course, some of these constraints can be easily amended. E.g. they Oracle can sign over multiple
@@ -77,7 +76,7 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
         // We only expect to see commands.
         fun check(elem: Any): Boolean {
             return when (elem) {
-                is Command -> commandValidator(elem)
+                is Command<*> -> commandValidator(elem)
                 else -> throw IllegalArgumentException("Oracle received data of different type than expected.")
             }
         }
@@ -86,8 +85,11 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
         val leaves = ftx.filteredLeaves
         if (!leaves.checkWithFun(::check)) throw IllegalArgumentException()
 
+        val signableData = SignableData(ftx.rootHash, SignatureMetadata(
+                services.myInfo.platformVersion,
+                Crypto.findSignatureScheme(identity.owningKey).schemeNumberID))
+
         // Sign over the Merkle root and return the digital signature.
-        val signature = services.keyManagementService.sign(ftx.rootHash.bytes, identity.owningKey)
-        return DigitalSignature.LegallyIdentifiable(identity, signature.bytes)
+        return services.keyManagementService.sign(signableData, identity.owningKey)
     }
 }

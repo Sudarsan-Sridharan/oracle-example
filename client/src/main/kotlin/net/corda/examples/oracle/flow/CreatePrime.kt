@@ -2,16 +2,17 @@ package net.corda.examples.oracle.flow
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.Command
-import net.corda.core.contracts.TransactionType
+import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.service.PrimeType
-import net.corda.flows.FinalityFlow
 import java.math.BigInteger
+import java.util.function.Predicate
 
 // This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
 // and the Oracle's signature over the transaction containing it.
@@ -61,33 +62,26 @@ class CreatePrime(val index: Long) : FlowLogic<SignedTransaction>() {
         // Create a new prime state.
         val state = Prime.State(index, nthPrime, me)
         // Add the state and the command to the builder.
-        val builder = TransactionType.General.Builder(notary).withItems(command, state)
+        val builder = TransactionBuilder(notary).withItems(command, state)
 
         // Verify the transaction.
-        builder.toWireTransaction().toLedgerTransaction(serviceHub).verify()
+        builder.verify(serviceHub)
 
-        // Build a filtered transaction for the Oracle to sign over.
-        // We only want to expose 'Prime.Create' commands if the specified Oracle is a signer.
-        val ftx = builder.toWireTransaction().buildFilteredTransaction {
-            when (it) {
-                is Command -> oracleService.owningKey in it.signers && it.value is Prime.Create
-                else -> false
-            }
-        }
+        // Sign the builder to convert it onto a SignedTransaction.
+        progressTracker.currentStep = SIGNING
+        val ptx = serviceHub.signInitialTransaction(builder)
 
         // Get a signature from the Oracle and add it to the transaction.
         progressTracker.currentStep = ORACLE_SIGNING
+        // Build a filtered transaction for the Oracle to sign over.
+        // We only want to expose 'Prime.Create' commands if the specified Oracle is a signer.
+        val ftx = ptx.tx.buildFilteredTransaction(Predicate {
+            (it is Command<*>) && (oracleService.owningKey in it.signers) && (it.value is Prime.Create)
+        })
         // Get a signature from the Oracle over the Merkle root of the transaction.
         val oracleSignature = subFlow(SignPrime(oracle.legalIdentity, ftx))
-        // Append the oracle's signature to the transaction and convert the builder to a SignedTransaction.
-        // We use the 'checkSufficientSignatures = false' as we haven't collected all the signatures yet.
-        val ptx = builder.addSignatureUnchecked(oracleSignature).toSignedTransaction(checkSufficientSignatures = false)
-
-        // Add our signature.
-        progressTracker.currentStep = SIGNING
-        // Generate the signature then add it to the transaction.
-        val mySignature = serviceHub.createSignature(ptx, me.owningKey)
-        val stx = ptx + mySignature
+        // Append the oracle's signature to the transaction.
+        val stx = ptx.withAdditionalSignature(oracleSignature)
 
         // Finalise.
         // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
@@ -97,5 +91,3 @@ class CreatePrime(val index: Long) : FlowLogic<SignedTransaction>() {
         return result
     }
 }
-
-

@@ -70,3 +70,8 @@ crashlytics-build.properties
 
 # docs related
 docs/virtualenv/
+
+# CorDapp-specific files
+base/out/
+client/out/
+service/out/

@@ -1,14 +1,12 @@
 package net.corda.examples.oracle.api
 
-import net.corda.client.rpc.notUsed
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.getOrThrow
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.utilities.getOrThrow
 import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.flow.CreatePrime
 import org.bouncycastle.asn1.x500.X500Name
-import rx.Observable
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
@@ -36,8 +34,7 @@ class ClientApi(val services: CordaRPCOps) {
     @Path("peers")
     @Produces(MediaType.APPLICATION_JSON)
     fun getPeers(): Map<String, List<String>> {
-        val peers = services.networkMapUpdates()
-                .justSnapshot
+        val peers = services.networkMapSnapshot()
                 .map { it.legalIdentity.name.toString() }
         return mapOf("peers" to peers)
     }
@@ -49,7 +46,7 @@ class ClientApi(val services: CordaRPCOps) {
     @Path("primes")
     @Produces(MediaType.APPLICATION_JSON)
     fun primes(): List<StateAndRef<ContractState>> {
-        return services.vaultAndUpdates().justSnapshot.filter { it.state.data is Prime.State }
+        return services.vaultQuery(Prime.State::class.java).states
     }
 
     /**
@@ -71,13 +68,5 @@ class ClientApi(val services: CordaRPCOps) {
         }
 
         return Response.status(status).entity(message).build()
-    }
-
-
-    // Helper method to get just the snapshot portion of an RPC call which also returns an Observable of updates. It's
-    // important to unsubscribe from this Observable if we're not going to use it as otherwise we leak resources on the server.
-    private val <A> Pair<A, Observable<*>>.justSnapshot: A get() {
-        second.notUsed()
-        return first
     }
 }
