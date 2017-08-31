@@ -1,4 +1,3 @@
-import com.google.common.util.concurrent.Futures
 import net.corda.core.crypto.getX509Name
 import net.corda.core.internal.concurrent.transpose
 import net.corda.core.node.services.ServiceInfo

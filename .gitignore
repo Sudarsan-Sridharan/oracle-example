@@ -72,6 +72,6 @@ crashlytics-build.properties
 docs/virtualenv/
 
 # CorDapp-specific files
-base/out/
-client/out/
-service/out/
+kotlin-source/base/out/
+kotlin-source/client/out/
+kotlin-source/service/out/

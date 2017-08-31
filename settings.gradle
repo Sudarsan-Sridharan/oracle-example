@@ -1,4 +1,4 @@
-include 'base'
-include 'service'
-include 'client'
-
+include 'kotlin-source'
+include 'kotlin-source:base'
+include 'kotlin-source:service'
+include 'kotlin-source:client'
