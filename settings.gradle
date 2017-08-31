@@ -2,3 +2,8 @@ include 'kotlin-source'
 include 'kotlin-source:base'
 include 'kotlin-source:service'
 include 'kotlin-source:client'
+
+include 'java-source'
+include 'java-source:base'
+include 'java-source:service'
+include 'java-source:client'

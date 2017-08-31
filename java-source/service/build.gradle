@@ -6,7 +6,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-apply plugin: 'kotlin'
+apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
@@ -43,9 +43,7 @@ dependencies {
 
     // CorDapp dependencies
     // Specify your cordapp's dependencies below, including dependent cordapps
-    cordapp project(":kotlin-source:base")
-    // Required for the tests.
-    testCompile project(":kotlin-source:service")
+    cordapp project(":java-source:base")
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

@@ -43,9 +43,9 @@ dependencies {
 
     // CorDapp dependencies
     // Specify your cordapp's dependencies below, including dependent cordapps
-    cordapp project(":kotlin-source:base")
+    cordapp project(":java-source:base")
     // Required for the tests.
-    testCompile project(":kotlin-source:service")
+    testCompile project(":java-source:service")
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

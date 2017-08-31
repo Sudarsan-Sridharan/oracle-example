@@ -13,9 +13,6 @@ import net.corda.testing.CHARLIE
 import net.corda.testing.CHARLIE_KEY
 import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.node.MockServices
-import net.corda.testing.node.makeTestDataSourceProperties
-import net.corda.testing.node.makeTestDatabaseProperties
-import net.corda.testing.node.makeTestIdentityService
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,9 +30,9 @@ class PrimesServiceTests {
     fun setUp() {
         // Mock components for testing the Oracle.
         database = configureDatabase(
-                makeTestDataSourceProperties(),
-                makeTestDatabaseProperties(),
-                createIdentityService = { makeTestIdentityService() })
+                MockServices.makeTestDataSourceProperties(),
+                MockServices.makeTestDatabaseProperties(),
+                createIdentityService = { MockServices.makeTestIdentityService() })
         database.transaction {
             oracle = Oracle(CHARLIE, dummyServices)
         }

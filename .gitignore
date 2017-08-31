@@ -75,3 +75,6 @@ docs/virtualenv/
 kotlin-source/base/out/
 kotlin-source/client/out/
 kotlin-source/service/out/
+java-source/base/out/
+java-source/client/out/
+java-source/service/out/
