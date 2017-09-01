@@ -84,12 +84,7 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
         // Validate the commands.
         val leaves = ftx.filteredLeaves
         if (!leaves.checkWithFun(::check)) throw IllegalArgumentException()
-
-        val signableData = SignableData(ftx.id, SignatureMetadata(
-                services.myInfo.platformVersion,
-                Crypto.findSignatureScheme(identity.owningKey).schemeNumberID))
-
         // Sign over the Merkle root and return the digital signature.
-        return services.keyManagementService.sign(signableData, identity.owningKey)
+        return services.createSignature(ftx)
     }
 }

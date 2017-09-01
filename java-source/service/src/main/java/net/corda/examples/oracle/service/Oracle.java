@@ -85,13 +85,8 @@ public class Oracle extends SingletonSerializeAsToken {
         // Validate the commands.
         FilteredLeaves leaves = ftx.getFilteredLeaves();
         if (!leaves.checkWithFun(this::check)) throw new IllegalArgumentException();
-
-        SignableData signableData = new SignableData(ftx.getId(), new SignatureMetadata(
-                services.getMyInfo().getPlatformVersion(),
-                Crypto.findSignatureScheme(identity.getOwningKey()).getSchemeNumberID()));
-
         // Sign over the Merkle root and return the digital signature.
-        return services.getKeyManagementService().sign(signableData, identity.getOwningKey());
+        return services.createSignature(ftx);
     }
 
     // Check that the correct primes are present for the index values specified.
