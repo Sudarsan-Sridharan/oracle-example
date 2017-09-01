@@ -52,21 +52,20 @@ public class Oracle extends SingletonSerializeAsToken {
     // Clearly, most developers can generate a list of primes and all but the largest prime numbers can be verified
     // deterministically in reasonable time. As such, it would be possible to add a constraint in the verify()
     // function that checks the nth prime is indeed the specified number.
-    public BigInteger query(int n) {
+    public int query(int n) {
         if (n <= 1) {
             throw new IllegalArgumentException("N must be greater than one.");
         }
 
-        BigInteger nthPrime = BigInteger.ONE;
-        for (int primesCounter = 0; primesCounter < n;) {
-            nthPrime = nthPrime.add(BigInteger.ONE);
-
-            if (nthPrime.isProbablePrime(16)) {
+        for (int primesCounter = 0, nthPrime = 1; true; nthPrime += 1) {
+            if (BigInteger.valueOf((long) nthPrime).isProbablePrime(16)) {
                 primesCounter += 1;
             }
-        }
 
-        return nthPrime;
+            if (primesCounter >= n) {
+                return nthPrime;
+            }
+        }
     }
 
     // Signs over a transaction if the specified nth prime for a particular n is correct.
@@ -87,7 +86,7 @@ public class Oracle extends SingletonSerializeAsToken {
         FilteredLeaves leaves = ftx.getFilteredLeaves();
         if (!leaves.checkWithFun(this::check)) throw new IllegalArgumentException();
 
-        SignableData signableData = new SignableData(ftx.getRootHash(), new SignatureMetadata(
+        SignableData signableData = new SignableData(ftx.getId(), new SignatureMetadata(
                 services.getMyInfo().getPlatformVersion(),
                 Crypto.findSignatureScheme(identity.getOwningKey()).getSchemeNumberID()));
 
@@ -107,7 +106,7 @@ public class Oracle extends SingletonSerializeAsToken {
 
         Prime.Create prime = (Prime.Create) elem.getValue();
         // This is where the check the validity of the nth prime.
-        return query(prime.getIndex()).equals(prime.getValue());
+        return query(prime.getIndex()) == prime.getValue();
     }
 
     // This function is run for each non-hash leaf of the Merkle tree.

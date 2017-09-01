@@ -1,7 +1,6 @@
 package net.corda.examples.oracle.flow
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow

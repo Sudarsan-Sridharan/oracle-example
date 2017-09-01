@@ -4,10 +4,11 @@ import net.corda.core.node.services.ServiceInfo;
 import net.corda.node.services.config.VerifierType;
 import net.corda.node.services.transactions.ValidatingNotaryService;
 import net.corda.nodeapi.User;
+import net.corda.testing.driver.DriverParameters;
 import net.corda.testing.driver.NodeHandle;
 
 import static java.util.Collections.*;
-import static net.corda.core.crypto.X500NameUtils.getX509Name;
+import static net.corda.core.utilities.X500NameUtils.getX509Name;
 import static net.corda.testing.driver.Driver.driver;
 
 /**
@@ -28,7 +29,7 @@ public class Main {
         // No permissions required as we are not invoking flows.
         final User user = new User("user1", "test", emptySet());
         driver(
-                true,
+                new DriverParameters().setIsDebug(true),
                 dsl -> {
                     dsl.startNode(getX509Name("Controller", "London", "root@city.uk.example"),
                             ImmutableSet.of(new ServiceInfo(ValidatingNotaryService.Companion.getType(), null)),

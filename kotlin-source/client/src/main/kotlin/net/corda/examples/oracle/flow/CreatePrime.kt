@@ -11,7 +11,6 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.service.PrimeType
-import java.math.BigInteger
 import java.util.function.Predicate
 
 // This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
@@ -51,7 +50,7 @@ class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
         // Query the Oracle to get specified nth prime number.
         progressTracker.currentStep = QUERYING
         // Query the Oracle. Specify the identity of the ORacle we want to query and a natural number N.
-        val nthPrime: BigInteger = subFlow(QueryPrime(oracle.legalIdentity, index))
+        val nthPrime = subFlow(QueryPrime(oracle.legalIdentity, index))
 
         // Create a new transaction using the data from the Oracle.
         progressTracker.currentStep = BUILDING_AND_VERIFYING
@@ -86,8 +85,6 @@ class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
         // Finalise.
         // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
         progressTracker.currentStep = FINALISING
-        val result = subFlow(FinalityFlow(stx)).single()
-
-        return result
+        return subFlow(FinalityFlow(stx)).single()
     }
 }

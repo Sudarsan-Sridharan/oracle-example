@@ -41,11 +41,11 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
     // Clearly, most developers can generate a list of primes and all but the largest prime numbers can be verified
     // deterministically in reasonable time. As such, it would be possible to add a constraint in the verify()
     // function that checks the nth prime is indeed the specified number.
-    private val primes: Sequence<BigInteger>
-        get() = generateSequence(BigInteger.ONE) { it + BigInteger.ONE }.filter { it.isProbablePrime(16) }
+    private val primes: Sequence<Int>
+        get() = generateSequence(1) { it + 1 }.filter { BigInteger.valueOf(it.toLong()).isProbablePrime(16) }
 
     // Returns the nth prime for a given n > 0.
-    fun query(n: Int): BigInteger {
+    fun query(n: Int): Int {
         require(n > 1) { "N must be greater than one." }
         return primes.take(n).last()
     }
@@ -85,7 +85,7 @@ class Oracle(val identity: Party, val services: ServiceHub) : SingletonSerialize
         val leaves = ftx.filteredLeaves
         if (!leaves.checkWithFun(::check)) throw IllegalArgumentException()
 
-        val signableData = SignableData(ftx.rootHash, SignatureMetadata(
+        val signableData = SignableData(ftx.id, SignatureMetadata(
                 services.myInfo.platformVersion,
                 Crypto.findSignatureScheme(identity.owningKey).schemeNumberID))
 

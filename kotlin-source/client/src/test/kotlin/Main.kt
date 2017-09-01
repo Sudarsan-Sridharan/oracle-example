@@ -1,7 +1,7 @@
-import net.corda.core.crypto.getX509Name
 import net.corda.core.internal.concurrent.transpose
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.getX509Name
 import net.corda.node.services.transactions.ValidatingNotaryService
 import net.corda.nodeapi.User
 import net.corda.testing.driver.driver

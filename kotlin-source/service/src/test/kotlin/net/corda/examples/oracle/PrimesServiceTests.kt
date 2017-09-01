@@ -6,85 +6,56 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
 import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.service.Oracle
-import net.corda.node.utilities.CordaPersistence
-import net.corda.node.utilities.configureDatabase
-import net.corda.testing.ALICE
-import net.corda.testing.CHARLIE
-import net.corda.testing.CHARLIE_KEY
-import net.corda.testing.DUMMY_NOTARY
+import net.corda.testing.*
 import net.corda.testing.node.MockServices
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.math.BigInteger
 import java.util.function.Predicate
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class PrimesServiceTests {
-    val dummyServices = MockServices(CHARLIE_KEY)
+class PrimesServiceTests : TestDependencyInjectionBase() {
     lateinit var oracle: Oracle
-    lateinit var database: CordaPersistence
 
     @Before
     fun setUp() {
-        // Mock components for testing the Oracle.
-        database = configureDatabase(
-                MockServices.makeTestDataSourceProperties(),
-                MockServices.makeTestDatabaseProperties(),
-                createIdentityService = { MockServices.makeTestIdentityService() })
-        database.transaction {
-            oracle = Oracle(CHARLIE, dummyServices)
-        }
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
+        oracle = Oracle(CHARLIE, MockServices(CHARLIE_KEY))
     }
 
     @Test
     fun `successful query`() {
-        database.transaction {
-            val result = oracle.query(10000)
-            assertEquals("104729", result.toString())
-        }
+        val result = oracle.query(10000)
+        assertEquals("104729", result.toString())
     }
 
     @Test
     fun `bad query parameter`() {
-        database.transaction {
-            assertFailsWith<IllegalArgumentException> { oracle.query(0) }
-            assertFailsWith<IllegalArgumentException> { oracle.query(-1) }
-        }
+        assertFailsWith<IllegalArgumentException> { oracle.query(0) }
+        assertFailsWith<IllegalArgumentException> { oracle.query(-1) }
     }
 
     @Test
     fun `successful sign`() {
-        database.transaction {
-            val command = Command(Prime.Create(10, BigInteger.valueOf(29)), listOf(CHARLIE.owningKey))
-            val state = Prime.State(10, BigInteger.valueOf(29), ALICE)
-            val wtx: WireTransaction = TransactionBuilder(DUMMY_NOTARY)
-                    .withItems(state, command)
-                    .toWireTransaction()
-            val ftx: FilteredTransaction = wtx.buildFilteredTransaction(Predicate {
-                (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
-            })
-            val signature = oracle.sign(ftx)
-            assert(signature.verify(ftx.rootHash))
-        }
+        val command = Command(Prime.Create(10, 29), listOf(CHARLIE.owningKey))
+        val state = Prime.State(10, 29, ALICE)
+        val wtx: WireTransaction = TransactionBuilder(DUMMY_NOTARY)
+                .withItems(state, command)
+                .toWireTransaction()
+        val ftx: FilteredTransaction = wtx.buildFilteredTransaction(Predicate {
+            (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
+        })
+        val signature = oracle.sign(ftx)
+        assert(signature.verify(ftx.id))
     }
 
     @Test
     fun `incorrect prime specified`() {
-        database.transaction {
-            val command = Command(Prime.Create(10, BigInteger.valueOf(1000)), listOf(CHARLIE.owningKey))
-            val state = Prime.State(10, BigInteger.valueOf(29), ALICE)
-            val wtx: WireTransaction = TransactionBuilder(DUMMY_NOTARY).withItems(state, command).toWireTransaction()
-            val ftx: FilteredTransaction = wtx.buildFilteredTransaction(Predicate {
-                (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
-            })
-            assertFailsWith<IllegalArgumentException> { oracle.sign(ftx) }
-        }
+        val command = Command(Prime.Create(10, 1000), listOf(CHARLIE.owningKey))
+        val state = Prime.State(10, 29, ALICE)
+        val wtx = TransactionBuilder(DUMMY_NOTARY).withItems(state, command).toWireTransaction()
+        val ftx = wtx.buildFilteredTransaction(Predicate {
+            (it is Command<*>) && (oracle.identity.owningKey in it.signers) && (it.value is Prime.Create)
+        })
+        assertFailsWith<IllegalArgumentException> { oracle.sign(ftx) }
     }
 }

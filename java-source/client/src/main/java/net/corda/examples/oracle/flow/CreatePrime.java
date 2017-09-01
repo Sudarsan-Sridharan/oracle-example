@@ -15,8 +15,6 @@ import net.corda.core.utilities.ProgressTracker.Step;
 import net.corda.examples.oracle.contract.Prime;
 import net.corda.examples.oracle.service.PrimeType;
 
-import java.math.BigInteger;
-
 // This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
 // and the Oracle's signature over the transaction containing it.
 @InitiatingFlow     // This flow can be started by the node.
@@ -72,7 +70,7 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Query the Oracle to get specified nth prime number.
         progressTracker.setCurrentStep(QUERYING);
         // Query the Oracle. Specify the identity of the Oracle we want to query and a natural number N.
-        BigInteger nthPrime = subFlow(new QueryPrime(oracle.getLegalIdentity(), index));
+        int nthPrime = subFlow(new QueryPrime(oracle.getLegalIdentity(), index));
 
         // Create a new transaction using the data from the Oracle.
         progressTracker.setCurrentStep(BUILDING_AND_VERIFYING);
@@ -98,9 +96,14 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         progressTracker.setCurrentStep(ORACLE_SIGNING);
         // Build a filtered transaction for the Oracle to sign over.
         // We only want to expose 'Prime.Create' commands if the specified Oracle is a signer.
-        FilteredTransaction ftx = ptx.getTx().buildFilteredTransaction(
-                this::filterOracleCmds
-        );
+        FilteredTransaction ftx = ptx.getTx().buildFilteredTransaction(elem -> {
+            if (elem instanceof Command) {
+                Command cmd = (Command) elem;
+                return cmd.getSigners().contains(oracleService.getOwningKey())
+                        && cmd.getValue() instanceof Prime.Create;
+            }
+            return false;
+        });
         // Get a signature from the Oracle over the Merkle root of the transaction.
         TransactionSignature oracleSignature = subFlow(new SignPrime(oracle.getLegalIdentity(), ftx));
         // Append the oracle's signature to the transaction.
@@ -110,21 +113,5 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
         progressTracker.setCurrentStep(FINALISING);
         return subFlow(new FinalityFlow(stx)).get(0);
-    }
-
-    /**
-     * Returns true if the transaction object is a command relevant to the primes oracle.
-     *
-     * @param elem the transaction object to check.
-     */
-    private boolean filterOracleCmds(Object elem) {
-        if (elem instanceof Command) {
-            Command cmd = (Command) elem;
-            NodeInfo oracle = getServiceHub().getNetworkMapCache().getNodesWithService(PrimeType.getType()).get(0);
-            Party oracleService = oracle.serviceIdentities(PrimeType.getType()).get(0);
-            return cmd.getSigners().contains(oracleService.getOwningKey())
-                    && cmd.getValue() instanceof Prime.Create;
-        }
-        return false;
     }
 }

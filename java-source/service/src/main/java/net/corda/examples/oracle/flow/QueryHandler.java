@@ -8,8 +8,6 @@ import net.corda.core.identity.Party;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.examples.oracle.service.Oracle;
 
-import java.math.BigInteger;
-
 // The Service side flow to handle Oracle queries.
 @InitiatedBy(QueryPrime.class)
 public class QueryHandler extends FlowLogic<Void> {
@@ -38,7 +36,7 @@ public class QueryHandler extends FlowLogic<Void> {
         progressTracker.setCurrentStep(SENDING);
         try {
             // Get the nth prime from the Oracle.
-            BigInteger response = getServiceHub().cordaService(Oracle.class).query(request);
+            int response = getServiceHub().cordaService(Oracle.class).query(request);
             // Send back the result.
             send(otherParty, response);
         } catch (Exception e) {

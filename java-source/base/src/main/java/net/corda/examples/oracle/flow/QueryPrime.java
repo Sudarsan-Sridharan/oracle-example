@@ -5,11 +5,9 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.identity.Party;
 
-import java.math.BigInteger;
-
 // Simple flow which takes a reference to an Oracle and a number then returns the corresponding nth prime number.
 @InitiatingFlow
-class QueryPrime extends FlowLogic<BigInteger> {
+class QueryPrime extends FlowLogic<Integer> {
     private final Party oracle;
     private final int n;
 
@@ -18,7 +16,7 @@ class QueryPrime extends FlowLogic<BigInteger> {
         this.n = n;
     }
 
-    @Override public BigInteger call() throws FlowException {
-        return sendAndReceive(BigInteger.class, oracle, n).unwrap(it -> it);
+    @Override public Integer call() throws FlowException {
+        return sendAndReceive(Integer.class, oracle, n).unwrap(it -> it);
     }
 }
