@@ -13,12 +13,12 @@ import net.corda.examples.oracle.contract.Prime
 import net.corda.examples.oracle.service.PrimeType
 import java.util.function.Predicate
 
-// This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
-// and the Oracle's signature over the transaction containing it.
-@InitiatingFlow     // This flow can be started by the node.
-@StartableByRPC // Annotation to allow this flow to be started via RPC.
+// This is the client side flow that uses the 'QueryPrime' and 'SignPrime' flows to obtain data
+// from the Oracle as well as the Oracle's signature over the transaction containing it.
+@InitiatingFlow // Allows the flow can be started by the node.
+@StartableByRPC // Allows the flow to be started via RPC.
 class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
-    // Progress tracker boilerplate.
+    // Progress tracker.
     companion object {
         object INITIALISING : ProgressTracker.Step("Initialising flow.")
         object QUERYING : ProgressTracker.Step("Querying Oracle for an nth prime.")
@@ -41,22 +41,22 @@ class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
         val notary = serviceHub.networkMapCache.notaryNodes.single().notaryIdentity
         // We get the oracle reference by using the ServiceType definition defined in the base CorDapp.
         val oracle = serviceHub.networkMapCache.getNodesWithService(PrimeType.type).single()
-        // **IMPORTANT:** Corda node services use their own key pairs, therefore we need to obtain the Party object for
-        // the Oracle service as opposed to the node RUNNING the Oracle service.
+        // **IMPORTANT:** Corda node services use their own key pairs. We therefore need to obtain
+        // the Party object of the Oracle service as opposed to that of the node RUNNING the Oracle service.
         val oracleService = oracle.serviceIdentities(PrimeType.type).single()
         // The calling node's identity.
         val me = serviceHub.myInfo.legalIdentity
 
-        // Query the Oracle to get specified nth prime number.
+        // Query the Oracle to get nth prime number.
         progressTracker.currentStep = QUERYING
-        // Query the Oracle. Specify the identity of the ORacle we want to query and a natural number N.
+        // Query the Oracle. Specify the identity of the ORacle we want to query and a natural number n.
         val nthPrime = subFlow(QueryPrime(oracle.legalIdentity, index))
 
         // Create a new transaction using the data from the Oracle.
         progressTracker.currentStep = BUILDING_AND_VERIFYING
         // Build our command.
-        // NOTE: The command requires the public key of the oracle, hence we need the signature from the oracle over
-        // this transaction.
+        // NOTE: The command requires the oracle's public key, meaning that the oracle will need
+        // to sign this transaction.
         val command = Command(Prime.Create(index, nthPrime), listOf(oracleService.owningKey, me.owningKey))
         // Create a new prime state.
         val state = Prime.State(index, nthPrime, me)
@@ -66,7 +66,7 @@ class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
         // Verify the transaction.
         builder.verify(serviceHub)
 
-        // Sign the builder to convert it onto a SignedTransaction.
+        // Sign the builder to convert it into a SignedTransaction.
         progressTracker.currentStep = SIGNING
         val ptx = serviceHub.signInitialTransaction(builder)
 
@@ -82,8 +82,8 @@ class CreatePrime(val index: Int) : FlowLogic<SignedTransaction>() {
         // Append the oracle's signature to the transaction.
         val stx = ptx.withAdditionalSignature(oracleSignature)
 
-        // Finalise.
-        // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
+        // Finalise by calling finality flow. The transaction will be broadcast to all parties
+        // listed in 'participants'.
         progressTracker.currentStep = FINALISING
         return subFlow(FinalityFlow(stx)).single()
     }

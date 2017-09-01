@@ -15,9 +15,9 @@ import java.math.BigInteger
 // When a flow is check-pointed, the annotated @Suspendable methods and any object referenced from within those
 // annotated methods are serialised onto the stack. Kryo, the reflection based serialisation framework we use, crawls
 // the object graph and serialises anything it encounters, producing a graph of serialised objects.
-// This can cause some issues, for example: we do not want to serialise large objects on to the stack or objects which
-// may reference databases or other external services (which cannot be serialised!), therefore we mark certain objects
-// with tokens. When Kryo encounters one of these tokens, it doesn't serialise the object, instead, it makes a
+// This can cause some issues. For example, we do not want to serialise large objects on the stack or objects which
+// may reference databases or other external services (which cannot be serialised!). We therefore mark certain objects
+// with tokens. When Kryo encounters one of these tokens, it doesn't serialise the object. Instead, it makes a
 // reference to the type of the object. When flows are de-serialised, the token is used to connect up the object reference
 // to an instance which should already exist on the stack.
 @CordaService

@@ -10,8 +10,8 @@ import net.corda.core.transactions.LedgerTransaction
 // Contract and state object definition.
 class Prime : Contract {
     // State object with custom properties defined in the constructor.
-    // If 'index' is a natural number N then 'value' is the Nth Prime.
-    // Requester represents the Party that will store this fact (in the node vault).
+    // 'index' is a natural number n and 'value' is the nth prime number.
+    // 'Requester' represents the Party that will store this fact in the node's vault.
     data class State(val index: Int,
                      val value: Int,
                      val requester: AbstractParty) : ContractState {
@@ -20,12 +20,10 @@ class Prime : Contract {
         override fun toString() = "The ${index}th prime number is $value."
     }
 
-    // Command with data items.
-    // Commands that are to be used in conjunction with an Oracle contain properties
+    // This command with data is be used in conjunction with an Oracle.
     class Create(val index: Int, val value: Int) : CommandData
 
-    // Contract code.
-    // Here, we are only checking that the properties in the state match those in the command.
+    // Contract code that only checks that the properties in the state match those in the command.
     // We are relying on the Oracle to provide the correct nth prime.
     override fun verify(tx: LedgerTransaction) = requireThat {
         val command = tx.commandsOfType<Create>().single().value

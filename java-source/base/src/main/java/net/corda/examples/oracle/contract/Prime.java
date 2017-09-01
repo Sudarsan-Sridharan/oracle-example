@@ -14,6 +14,8 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
 // Contract and state object definition.
 public class Prime implements Contract {
 
+    // Contract code that only checks that the properties in the state match those in the command.
+    // We are relying on the Oracle to provide the correct nth prime.
     @Override
     public void verify(LedgerTransaction tx) throws IllegalArgumentException {
         requireThat(require -> {
@@ -27,8 +29,8 @@ public class Prime implements Contract {
     }
 
     // State object with custom properties defined in the constructor.
-    // If 'index' is a natural number N then 'value' is the Nth Prime.
-    // Requester represents the Party that will store this fact (in the node vault).
+    // 'index' is a natural number n and 'value' is the nth prime number.
+    // 'Requester' represents the Party that will store this fact in the node's vault.
     public static class State implements ContractState {
         private final int index;
         private final int value;
@@ -57,8 +59,7 @@ public class Prime implements Contract {
         }
     }
 
-    // Command with data items.
-    // Commands that are to be used in conjunction with an Oracle contain properties
+    // This command with data is be used in conjunction with an Oracle.
     public static class Create implements CommandData {
         private int index;
         private int value;

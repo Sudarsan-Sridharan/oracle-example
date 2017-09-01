@@ -27,8 +27,7 @@ class ClientApi(val services: CordaRPCOps) {
     fun whoami() = mapOf("me" to myLegalName)
 
     /**
-     * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
-     * using the [IdentityService].
+     * Returns all parties registered with the [NetworkMapService].
      */
     @GET
     @Path("peers")
@@ -56,7 +55,7 @@ class ClientApi(val services: CordaRPCOps) {
     @Path("create-prime")
     @Produces(MediaType.APPLICATION_JSON)
     fun createPrime(@QueryParam(value = "n") n: Int): Response {
-        // Start the CretePrime flow. We block and wait for the flow to return.
+        // Start the CreatePrime flow. We block and wait for the flow to return.
         val (status, message) = try {
             val flowHandle = services.startFlowDynamic(CreatePrime::class.java, n)
             val result = flowHandle.use { it.returnValue.getOrThrow() }.tx.outputs.single().data as Prime.State

@@ -42,8 +42,7 @@ public class ClientApi {
     }
 
     /**
-     * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
-     * using the [IdentityService].
+     * Returns all parties registered with the [NetworkMapService].
      */
     @GET
     @Path("peers")
@@ -82,10 +81,12 @@ public class ClientApi {
                     .startTrackedFlowDynamic(CreatePrime.class, n);
             final SignedTransaction result = flowHandle.getReturnValue().get();
             final Prime.State state = (Prime.State) result.getTx().getOutputs().get(0).getData();
+
+            // Return the response.
             status = Response.Status.CREATED;
             msg = state.toString();
-
         } catch (Throwable ex) {
+            // For the purposes of this demo app, we do not differentiate by exception type.
             status = Response.Status.BAD_REQUEST;
             msg = ex.getMessage();
         }

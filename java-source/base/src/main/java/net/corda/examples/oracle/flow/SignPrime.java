@@ -7,8 +7,8 @@ import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.FilteredTransaction;
 
-// Simple flow which takes a filtered transaction (exposing only a command containing the nth prime data) and returns
-// a digital signature over the transaction Merkle root.
+// Simple flow which takes a filtered transaction (exposing only a command containing the data on
+// the nth prime) and returns a digital signature over the transaction's Merkle root.
 @InitiatingFlow
 class SignPrime extends FlowLogic<TransactionSignature> {
     private final Party oracle;

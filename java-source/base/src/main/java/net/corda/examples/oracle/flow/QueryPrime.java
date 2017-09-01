@@ -5,7 +5,7 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.identity.Party;
 
-// Simple flow which takes a reference to an Oracle and a number then returns the corresponding nth prime number.
+// Simple flow which takes a reference to an Oracle and a number n, and returns the nth prime number.
 @InitiatingFlow
 class QueryPrime extends FlowLogic<Integer> {
     private final Party oracle;

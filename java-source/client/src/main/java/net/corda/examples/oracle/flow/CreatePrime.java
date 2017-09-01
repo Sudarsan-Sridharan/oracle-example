@@ -15,10 +15,10 @@ import net.corda.core.utilities.ProgressTracker.Step;
 import net.corda.examples.oracle.contract.Prime;
 import net.corda.examples.oracle.service.PrimeType;
 
-// This is the client side flow that makes use of the 'QueryPrime' and 'SignPrime' flows to obtain data from the Oracle
-// and the Oracle's signature over the transaction containing it.
-@InitiatingFlow     // This flow can be started by the node.
-@StartableByRPC // Annotation to allow this flow to be started via RPC.
+// This is the client side flow that uses the 'QueryPrime' and 'SignPrime' flows to obtain data
+// from the Oracle as well as the Oracle's signature over the transaction containing it.
+@InitiatingFlow // Allows the flow can be started by the node.
+@StartableByRPC // Allows the flow to be started via RPC.
 public class CreatePrime extends FlowLogic<SignedTransaction> {
     private final int index;
 
@@ -26,7 +26,7 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         this.index = index;
     }
 
-    // Progress tracker boilerplate.
+    // Progress tracker.
     private final ProgressTracker progressTracker = new ProgressTracker(
             INITIALISING,
             QUERYING,
@@ -59,24 +59,24 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Get references to all required parties.
         progressTracker.setCurrentStep(INITIALISING);
         Party notary = getServiceHub().getNetworkMapCache().getNotaryNodes().get(0).getNotaryIdentity();
-        // The calling node's identity.
-        Party me = getServiceHub().getMyInfo().getLegalIdentity();
         // We get the oracle reference by using the ServiceType definition defined in the base CorDapp.
         NodeInfo oracle = getServiceHub().getNetworkMapCache().getNodesWithService(PrimeType.getType()).get(0);
-        // **IMPORTANT:** Corda node services use their own key pairs, therefore we need to obtain the Party object for
-        // the Oracle service as opposed to the node RUNNING the Oracle service.
+        // **IMPORTANT:** Corda node services use their own key pairs. We therefore need to obtain
+        // the Party object of the Oracle service as opposed to that of the node RUNNING the Oracle service.
         Party oracleService = oracle.serviceIdentities(PrimeType.getType()).get(0);
+        // The calling node's identity.
+        Party me = getServiceHub().getMyInfo().getLegalIdentity();
 
-        // Query the Oracle to get specified nth prime number.
+        // Query the Oracle to get nth prime number.
         progressTracker.setCurrentStep(QUERYING);
-        // Query the Oracle. Specify the identity of the Oracle we want to query and a natural number N.
+        // Query the Oracle. Specify the identity of the Oracle we want to query and a natural number n.
         int nthPrime = subFlow(new QueryPrime(oracle.getLegalIdentity(), index));
 
         // Create a new transaction using the data from the Oracle.
         progressTracker.setCurrentStep(BUILDING_AND_VERIFYING);
         // Build our command.
-        // NOTE: The command requires the public key of the oracle, hence we need the signature from the oracle over
-        // this transaction.
+        // NOTE: The command requires the oracle's public key, meaning that the oracle will need
+        // to sign this transaction.
         Command command = new Command<>(
                 new Prime.Create(index, nthPrime),
                 ImmutableList.of(oracleService.getOwningKey(), me.getOwningKey()));
@@ -88,7 +88,7 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Verify the transaction.
         builder.verify(getServiceHub());
 
-        // Sign the builder to convert it onto a SignedTransaction.
+        // Sign the builder to convert it into a SignedTransaction.
         progressTracker.setCurrentStep(SIGNING);
         SignedTransaction ptx = getServiceHub().signInitialTransaction(builder);
 
@@ -109,8 +109,8 @@ public class CreatePrime extends FlowLogic<SignedTransaction> {
         // Append the oracle's signature to the transaction.
         SignedTransaction stx = ptx.withAdditionalSignature(oracleSignature);
 
-        // Finalise.
-        // We do this by calling finality flow. The transaction will be broadcast to all parties listed in 'participants'.
+        // Finalise by calling finality flow. The transaction will be broadcast to all parties
+        // listed in 'participants'.
         progressTracker.setCurrentStep(FINALISING);
         return subFlow(new FinalityFlow(stx)).get(0);
     }
